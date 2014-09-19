@@ -1,3 +1,5 @@
+# code in github
+
 # install.packages("MODISTools")
 library("MODISTools", lib.loc="~/R/win-library/3.0")
 
