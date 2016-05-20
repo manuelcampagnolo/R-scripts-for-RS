@@ -1,0 +1,70 @@
+# batch.ftp.r:
+#
+# retrieve hdf files form list of urls
+# A. read urls from txt file
+# B. for each url:
+#   1. download hdf file if it doesn't already exist
+# 	2. convert hdf to hdf5
+# 	3. remove hdf files from folder
+
+################################################
+DELETE.HDF<-FALSE
+CONVERT.TO.HDF5<-TRUE
+################################################
+
+
+# dados
+#V6:
+# ftp://ftpearth.bu.edu/sqs/BRDF_V6/h18v03/ # V6 data 2009-2013 e.g. ftp://ftpearth.bu.edu/sqs/BRDF_V6/h18v03/2009/
+# ftp://rsftp.eeos.umb.edu/data01/Temporary/qsun/BRDF_v6/h18v03/ # V6 data 2000--2008 e.g. ftp://rsftp.eeos.umb.edu/data01/Temporary/qsun/BRDF_v6/h18v03/2000/
+#T:
+# T1 and T2 produts: e.g. ftp://rsftp.eeos.umb.edu/data02/Average/tmp/V006_BRDF/h18v03/MCD43T/2000/ de 2000 até 2013
+
+destino<-"C:\\Users\\mlc\\Documents\\investigacao\\boston"
+#for (subfolder in c("V6")) #,"T"))
+#{
+pastahdf<-paste(destino,"V6",sep="/")  # e.g. "MCD43A4.A2010261.h18v03.hdf"
+pastahdf5<-paste(destino,"V6_hdf5",sep="/")
+
+# seleccionar datas que existem para V005
+lista.hdf5.005<-list.files(path="C:\\Users\\mlc\\Documents\\investigacao\\modis_reflectance_8_day_data",pattern="hdf5")
+lista.hdf5.MCD43A4.005<-lista.hdf5.005[substring(lista.hdf5.005,1,7)=="MCD43A4" | substring(lista.hdf5.005,1,7)=="MCD43A2"] # 529 dates for A4
+hdfnames<-paste(substring(lista.hdf5.MCD43A4.005,1,23),"hdf",sep=".") # returns e.g.  "MCD43A4.A2014161.h18v03"
+hdf5names<-paste(substring(lista.hdf5.MCD43A4.005,1,23),".006.hdf5",sep="") # returns e.g.  "MCD43A4.A2014161.h18v03.006.hdf5"
+
+
+for (i in 1:length(hdfnames)) 
+{ 
+  hdfname<-hdfnames[i]
+  newfilename<-hdf5names[i]
+  # I - convert to  hdf5 file: takes 50sec for a 17 Mb file
+  if (CONVERT.TO.HDF5)
+  {
+    # Create hdf5 if it doesn't exist
+   
+    if (hdfname %in% list.files(path=pastahdf) & !(newfilename %in% list.files(path=pastahdf5))) #create hdf5 file if hdf exists and hdf5 doesn't exist
+    {
+      print(paste("create new hdf5 file",newfilename))
+      system(paste(shQuote("C:\\Program Files\\HDF_Group\\H4TOH5\\2.2.2\\bin\\h4toh5convert"), paste(pastahdf,hdfname,sep="/"), paste(pastahdf5,newfilename,sep="/")), intern = FALSE, ignore.stderr = TRUE )
+    }
+    # read the first field of the hdf5 and confirm it's readable; otherwise delete current files hdf and hdf5 and don't increase i
+    #ind<-index.type(newfilename)
+    #fld<-h5read(newfilename,name=fields[[ind]][[1]])
+    #if (length(fld)>0) {print(range(fld)); i<-i+1} else {print(paste(newfilename,"not readable"));file.remove(hdfname,newfilename)} #
+  }
+  # II - delete hdf if hdf5 exists
+  if (DELETE.HDF)
+  {
+    if (newfilename %in% list.files(path=pastahdf5))
+    {
+      print(paste("file to be removed:", list.files(path=pastahdf, pattern=hdfname)) )
+      print(paste("existing file:", list.files(path=pastahdf5, pattern=newfilename)) )
+      #scan(nmax=1)
+      file.remove(paste(pastahdf,hdfname,sep="/"))
+    }
+  }
+}
+  
+#}
+
+
