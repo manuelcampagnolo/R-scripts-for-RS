@@ -1,0 +1,7 @@
+library("rhdf5")
+fich<-"C:\\Users\\mlc\\Documents\\investigacao-dados-importantes\\NASA\\MCD43A4.A2014161.h18v03.005.2014178105808.hdf5"
+layername<-"MOD_Grid_BRDF/Data Fields/Nadir_Reflectance_Band2"
+
+#aux<-h5read(file=fich,name=layername,index=list(cols=1+((tile$col.grid-ncols):(tile$col.grid+ncols)), rows=1+((tile$row.grid-nrows):(tile$row.grid+nrows))))
+aux<-h5read(file=fich,name=layername)
+plot(raster(aux))
