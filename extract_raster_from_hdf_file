@@ -1,0 +1,41 @@
+# input
+# hdf5 file name --> 250m: M09Q1 (8-day); --> 500m: M09GA (daily) or M09A1 (8-day) or MCD43A4 (NBAR 16-day)
+# field: field of the hdf5 file
+# lat/long of the center of the clip
+# lengthrow/lengthcol (in meters): size of the clip
+# output
+# (flip of) matrix extrated from the MODIS h18v03 gridded product 
+extract.gridded.product<-function(hdf5path,hdf5name,field=NA,lat,long,lengthrow,lengthcol,PLOT.ALL=FALSE,MAXVALPLOT=NA,return.field=FALSE) # instead of hdf5name august 2014
+{
+  if (is.na(field)) field<-prod.field(infoname(hdf5name)$prod) 
+  print(hdf5name)
+  print(field)
+  
+  # determine nominal resolution "nomres" from hdf5name (e.g. "MYD09GA.A2007020.h18v03.005.2007026005701.hdf5")
+  nomres<-0
+  nomres<-infoname(hdf5name)$nominal.resolution # see constants.r SHOULD BE PIXEL.SIZE
+  if (nomres==0) stop("no resolution is set")
+  if (nomres==250) W<-Ti/4800 # grid cell resolution("250m" resolution)
+  if (nomres==500) W<-Ti/2400 # grid cell resolution("500m" resolution)
+  if (nomres==1000) W<-Ti/1200 # grid cell resolution("1000m" resolution)
+  #print(lat); print(long); print(nomres)
+  # determine row/col and tile that corresponds to location lat/long
+  tile<-forward.mapping(pi*lat/180,pi*long/180,W=W,Ti=Ti)
+  #print(tile)
+  # dtermine coordinates (in degrees) of the center of the central grid cell of the clip
+  aux<-inverse.mapping(i=tile$row.grid,j=tile$col.grid,H=tile$col.tile,V=tile$row.tile,Ti=Ti,W=W)
+  lat.center<-aux$lat*180/pi
+  long.center<-aux$long*180/pi
+  
+  # size of the clips
+  psize<-prod.size(infoname(hdf5name)$prod)
+  nrows<-floor(0.5*lengthrow/psize) # instead of nomres
+  ncols<-floor(0.5*lengthcol/psize)
+  
+  #print(hdf5path)
+  # extract cells
+  aux<-h5read(file=hdf5path,name=field,index=list(cols=1+((tile$col.grid-ncols):(tile$col.grid+ncols)), rows=1+((tile$row.grid-nrows):(tile$row.grid+nrows))))
+  
+  if (!return.field) return(list(clip=aux,lat.center=lat.center,long.center=long.center))
+  if (return.field) return(field)
+}
